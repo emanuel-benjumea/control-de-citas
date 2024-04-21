@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Gestión de Pacientes</title>
+</head>
+<body>
+    <h1>Sistema de Gestión de Pacientes</h1>
+
+    <h2>Agendar Cita</h2>
+    <input type="text" id="cedulaCita" placeholder="Cédula del paciente">
+    <input type="datetime-local" id="fechaHoraCita" placeholder="Fecha y hora de la cita">
+    <button onclick="agendarCita()">Agendar Cita</button>
+
+    <h2>Registrar Urgencia</h2>
+    <input type="text" id="cedulaUrgencia" placeholder="Cédula del paciente">
+    <button onclick="registrarUrgencia()">Registrar Urgencia</button>
+
+    <h2>Atender Paciente</h2>
+    <button onclick="tipoAtencion('cita')">Atender Cita</button>
+    <button onclick="tipoAtencion('urgencia')">Atender Urgencia</button>
+
+    <h2>Historial de Atenciones</h2>
+    <ul id="historial">
+        <!-- Aquí se mostrarán las atenciones realizadas -->
+    </ul>
+
+    <script>
+
+        //estructura tipo cola
+    class Queue {
+        constructor() {this.items = [];}
+    
+        enqueue(item) {this.items.push(item);}
+    
+        dequeue() {
+            if (this.isEmpty()) {return null;}
+            return this.items.shift();
+        }
+    
+        isEmpty() {return this.items.length === 0;}
+    
+        peek() {return this.isEmpty() ? null : this.items[0];}
+    }
+
+    let agenda = new Queue();
+    let urgencias = new Queue();
+    let historial = [];
+
+    function agendarCita() {
+        const cedula = document.getElementById('cedulaCita').value;
+        const fechaHora = document.getElementById('fechaHoraCita').value;
+        agenda.enqueue({ cedula: cedula, fechaHora: fechaHora });
+        alert('Cita agendada para la cédula: ' + cedula + ' a las ' + fechaHora);
+    }
+    
+    function registrarUrgencia() {
+        const cedula = document.getElementById('cedulaUrgencia').value;
+        if (!agenda.items.some(item => item.cedula === cedula)) {
+            urgencias.enqueue({ cedula: cedula, fechaHora: new Date().toISOString() }); // Guarda también la hora actual
+            alert('Paciente de urgencia registrado: ' + cedula);
+        } else {
+            alert('Error: El paciente ya tiene una cita agendada');
+        }
+    }
+    
+    function tipoAtencion(tipo) {
+        let queue = tipo === 'cita' ? agenda : urgencias;
+        if (!queue.isEmpty()) {
+            atenderPaciente(queue, tipo);
+        } else {
+            alert(`No hay pacientes en espera para ${tipo}`);
+        }
+    }
+    
+    function atenderPaciente(queue, tipo) {
+        if (tipo === 'cita') {
+            const cita = queue.peek();
+            const fechaCita = new Date(cita.fechaHora);
+            if (fechaCita.getTime() >= new Date().getTime()) {
+                alert('No es el momento exacto para esta cita.');
+                return;
+            }
+        }
+        const pacienteAtendido = queue.dequeue();
+        const diagnostico = prompt('Ingrese el diagnóstico para la cédula ' + pacienteAtendido.cedula);
+        historial.push({ cedula: pacienteAtendido.cedula, tipo: tipo, diagnostico: diagnostico, fechaHora: pacienteAtendido.fechaHora });
+        actualizarHistorial();
+        alert(`Paciente de ${tipo} atendido: ` + pacienteAtendido.cedula);
+    }
+    
+    function actualizarHistorial() {
+        const listaHistorial = document.getElementById('historial');
+        listaHistorial.innerHTML = '';
+        historial.forEach((h, index) => {
+            const item = document.createElement('li');
+            item.textContent = `Cédula: ${h.cedula}, Tipo: ${h.tipo}, Diagnóstico: ${h.diagnostico}, Fecha/Hora: ${h.fechaHora} (Atención #${index + 1})`;
+            listaHistorial.appendChild(item);
+        });
+    }
+    </script>
+</body>
+</html>
